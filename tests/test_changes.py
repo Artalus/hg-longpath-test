@@ -35,16 +35,24 @@ def test_rm(unpack_repo: str, hg_cmd: list[str]) -> None:
         with hg.chdir():
             return os.path.isfile(fname)
 
-    # surprisingly, `hg rm` does not fail - yet it does nothing, thinking file already marked
+    # surprisingly, `hg rm` thinks file already deleted, does not touch filesystem, and actually marks it in hg
     assert long_file_exists(), "file exists before rm (of course)"
-    hg.do(f'rm {fname}')
+
+    x = hg.out(f'status -A {fname}').replace('\\', '/')
+    if windows() and hg.is_exe():
+        assert x == f'! {fname}', 'windows does not see long path and considers it deleted'
+    else:
+        assert x == f'C {fname}', 'long file should be safely committed'
+
+    x = hg.out(f'rm {fname}')
+    assert not x, "should success or do nothing"
 
     if windows() and hg.is_exe():
         assert long_file_exists(), "file should still exist after failed rm"
     else:
-        x = hg.out(f'status -A {fname}').replace('\\', '/')
-        assert x == f'R {fname}', 'long file should be marked for removal'
         assert not long_file_exists(), "file removed after rm"
+    x = hg.out(f'status -A {fname}').replace('\\', '/')
+    assert x == f'R {fname}', 'long file should be marked for removal'
 
 
 @multiple_hg
@@ -71,6 +79,39 @@ def test_commit_adds(unpack_repo: str, hg_cmd: list[str]) -> None:
         assert x == 'xxx', 'should contain 3 commits'
         x = hg.out('status')
         assert not x, 'should not have changes to files'
+
+
+@multiple_hg
+def test_commit_removes(unpack_repo: str, hg_cmd: list[str]) -> None:
+    # TODO: should be skipped if test_rm fails, otherwise can report nonsence
+    hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
+    fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
+    def long_file_exists() -> bool:
+        with hg.chdir():
+            return os.path.isfile(fname)
+
+    assert long_file_exists(), "file exists before rm (of course)"
+    # does not fail, see test_rm
+    x = hg.out(f'rm {fname}')
+    assert not x, "should success or do nothing"
+
+    if windows() and hg.is_exe():
+        assert long_file_exists(), "file should still exist after failed rm"
+
+        hg.commit('remove long path')        
+        assert long_file_exists(), "file should still exist after failed commit"
+    else:
+        assert not long_file_exists(), "file removed after rm"
+
+        hg.commit('remove long path')
+        assert not long_file_exists(), "file stays removed after commit"
+
+    x = hg.out(f'status -A {fname}')
+    assert not x, "hg does not detect removed file"
+    x = hg.out('log -T x')
+    assert x == 'xxx', 'should contain 3 commits'
+    x = hg.out('status')
+    assert not x, 'should not have changes to tracked files'
 
 
 @multiple_hg
@@ -120,8 +161,9 @@ def test_move(unpack_repo: str, hg_cmd: list[str]) -> None:
     hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
     src = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
     dst = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME_2)
-    # surprisingly, `hg mv` does not fail - yet it reports that "file was marked for deletion"
+    # surprisingly, `hg mv` does not fail - yet reports that file "deleted in working directory" in stderr
     hg.do(f'mv {src} {dst}')
+
     if windows() and hg.is_exe():
         with hg.chdir():
             assert os.path.isfile(src), "source file should remain"
