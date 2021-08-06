@@ -52,3 +52,6 @@ class Hg:
                 os.makedirs(dirs)
             with open(path, 'w') as f:
                 f.write(content)
+
+    def is_exe(self) -> bool:
+        return ' ' not in self.hg_cmd

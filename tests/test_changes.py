@@ -1,30 +1,38 @@
+from typing import Callable
 import os
 from pytest import mark
 
 from hgl import Hg
 from hgl.init import Const
 
-from hgl.utils import windows, filepath
+from hgl.utils import windows, filepath, possible_hg_commands
 
 
-def test_add(unpack_repo: str) -> None:
-    hg = Hg(workdir=unpack_repo)
+HgTest = Callable[[str, list[str]], None]
+def multiple_hg(func: HgTest) -> HgTest:
+    return mark.parametrize("hg_cmd", possible_hg_commands())(func)
+
+
+@multiple_hg
+def test_add(unpack_repo: str, hg_cmd: list[str]) -> None:
+    hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
     fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME_2)
     hg.write_file(fname)
-    if windows():
+    if windows() and hg.is_exe():
         rc = hg.code(f'add {fname}')
         assert rc, 'windows cannot add long paths'
     else:
         hg.do(f'add {fname}')
-        x = hg.out(f'status -A {fname}')
+        x = hg.out(f'status -A {fname}').replace('\\', '/')
         assert x == f'A {fname}', 'long file should be marked for addition'
 
 
-def test_commit(unpack_repo: str) -> None:
-    hg = Hg(workdir=unpack_repo)
+@multiple_hg
+def test_commit(unpack_repo: str, hg_cmd: list[str]) -> None:
+    hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
     fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
     hg.write_file(fname, 'world hello')
-    if windows():
+    if windows() and hg.is_exe():
         before = hg.out('log -T "{node}"')
         rc = hg.commit_code('another long path')
         assert rc, 'windows cannot commit changes in long paths'
@@ -36,9 +44,10 @@ def test_commit(unpack_repo: str) -> None:
         assert x == 'xxx', 'should contain 3 commits'
 
 
-def test_strip(unpack_repo: str) -> None:
-    hg = Hg(workdir=unpack_repo)
-    if windows():
+@multiple_hg
+def test_strip(unpack_repo: str, hg_cmd: list[str]) -> None:
+    hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
+    if windows() and hg.is_exe():
         def long_file_exists() -> bool:
             with hg.chdir():
                 return os.path.isfile(filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME))
@@ -58,13 +67,14 @@ def test_strip(unpack_repo: str) -> None:
         assert x == 'x', 'should contain 1 commit'
 
 
-def test_move(unpack_repo: str) -> None:
-    hg = Hg(workdir=unpack_repo)
+@multiple_hg
+def test_move(unpack_repo: str, hg_cmd: list[str]) -> None:
+    hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
     src = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
     dst = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME_2)
     # surprisingly, `hg mv` does not fail - yet it reports that "file was marked for deletion"
     hg.do(f'mv {src} {dst}')
-    if windows():
+    if windows() and hg.is_exe():
         with hg.chdir():
             assert os.path.isfile(src), "source file should remain"
             assert not os.path.isfile(dst), "destination file should not be"
