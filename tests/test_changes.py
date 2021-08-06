@@ -55,14 +55,14 @@ def test_strip(unpack_repo: str, hg_cmd: list[str]) -> None:
         before = hg.out('log -T "{node}"')
         assert long_file_exists(), "file exists before strip (of course)"
 
-        rc = hg.code('strip -r .')
+        rc = hg.code('--config extensions.strip= strip -r .')
         assert rc, 'windows cannot remove long paths during strip'
 
         assert long_file_exists(), "file should still exist after failed strip"
         after = hg.out('log -T "{node}"')
         assert before == after, 'should still contain same commits'
     else:
-        hg.do('strip -r .')
+        hg.do('--config extensions.strip= strip -r .')
         x = hg.out('log -T x')
         assert x == 'x', 'should contain 1 commit'
 
