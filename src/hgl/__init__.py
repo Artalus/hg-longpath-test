@@ -9,13 +9,16 @@ class Hg:
         self.workdir = workdir
         self.user = user
 
-
-    def do(self, cmd: str) -> None:
+    def code(self, cmd: str) -> int:
         with self.chdir():
             c = f'{self.hg_cmd} {cmd}'
-            rc = os.system(c)
+            return os.system(c)
+
+
+    def do(self, cmd: str) -> None:
+        rc = self.code(cmd)
         if rc:
-            raise RuntimeError(f'hg failed\ncmd: {c}\nreturn: {rc}')
+            raise RuntimeError(f'{self.hg_cmd} failed\ncmd: {cmd}\nreturn: {rc}')
 
     def out(self, cmd: str) -> str:
         with self.chdir():
@@ -36,3 +39,11 @@ class Hg:
             yield
         finally:
             os.chdir(cwd)
+
+    def write_file(self, path: str, content: str='hello world') -> None:
+        with self.chdir():
+            dirs, _ = os.path.split(path)
+            if dirs and not os.path.isdir(dirs):
+                os.makedirs(dirs)
+            with open(path, 'w') as f:
+                f.write(content)

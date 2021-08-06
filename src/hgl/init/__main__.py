@@ -24,17 +24,12 @@ def main() -> None:
     hg.do(f'init')
 
     fname = Const.REGULAR_FILE_NAME
-    with hg.chdir():
-        with open(fname, 'w') as f:
-            f.write("hello world")
+    hg.write_file(fname)
     hg.do(f'add {fname}')
     hg.commit(f'add {fname}')
 
-    with hg.chdir():
-        os.makedirs(Const.LONG_FOLDER_TREE)
-        fname = Const.LONG_FOLDER_TREE + '/' + Const.LONG_FILE_NAME
-        with open(fname, 'w') as f:
-            f.write("hello world")
+    fname = Const.LONG_FOLDER_TREE + '/' + Const.LONG_FILE_NAME
+    hg.write_file(fname)
     hg.do(f'add {fname}')
     hg.commit(f'add long file')
 
