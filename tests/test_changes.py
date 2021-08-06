@@ -7,8 +7,8 @@ from hgl.init import Const
 from hgl.utils import windows, filepath
 
 
-def test_add(unpack_repo: Hg) -> None:
-    hg = unpack_repo
+def test_add(unpack_repo: str) -> None:
+    hg = Hg(workdir=unpack_repo)
     fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME_2)
     hg.write_file(fname)
     if windows():
@@ -16,12 +16,12 @@ def test_add(unpack_repo: Hg) -> None:
         assert rc, 'windows cannot add long paths'
     else:
         hg.do(f'add {fname}')
-        x = unpack_repo.out(f'status -A {fname}')
+        x = hg.out(f'status -A {fname}')
         assert x == f'A {fname}', 'long file should be marked for addition'
 
 
-def test_commit(unpack_repo: Hg) -> None:
-    hg = unpack_repo
+def test_commit(unpack_repo: str) -> None:
+    hg = Hg(workdir=unpack_repo)
     fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
     hg.write_file(fname, 'world hello')
     if windows():
@@ -36,8 +36,8 @@ def test_commit(unpack_repo: Hg) -> None:
         assert x == 'xxx', 'should contain 3 commits'
 
 
-def test_strip(unpack_repo: Hg) -> None:
-    hg = unpack_repo
+def test_strip(unpack_repo: str) -> None:
+    hg = Hg(workdir=unpack_repo)
     if windows():
         def long_file_exists() -> bool:
             with hg.chdir():
@@ -58,8 +58,8 @@ def test_strip(unpack_repo: Hg) -> None:
         assert x == 'x', 'should contain 1 commit'
 
 
-def test_move(unpack_repo: Hg) -> None:
-    hg = unpack_repo
+def test_move(unpack_repo: str) -> None:
+    hg = Hg(workdir=unpack_repo)
     src = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
     dst = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME_2)
     # surprisingly, `hg mv` does not fail - yet it reports that "file was marked for deletion"
