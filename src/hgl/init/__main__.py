@@ -38,7 +38,7 @@ def main() -> None:
     hg.do(f'add {fname}')
     hg.commit(f'add long file')
 
-    with tarfile.open(f'{repo}.tgz', "w:gz") as tar:
+    with tarfile.open(f'{repo}.tar', "w") as tar:
         tar.add(repo, arcname='.')
 
 if __name__ == '__main__':
