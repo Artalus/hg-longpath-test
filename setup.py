@@ -9,6 +9,9 @@ setuptools.setup(
         "mercurial>=5.8"
     ],
     extras_require=dict(
-        test=['pytest', 'pytest-xdist']
+        test=[
+            'pytest',
+            'pytest-xdist',
+        ]
     )
 )
