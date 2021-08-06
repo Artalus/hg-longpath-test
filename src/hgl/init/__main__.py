@@ -4,6 +4,7 @@ import shutil
 import tarfile
 
 from hgl import Hg
+from hgl.init import Const
 
 
 def parse_args():
@@ -22,11 +23,20 @@ def main() -> None:
 
     hg.do(f'init')
 
-    fname = 'file.txt'
-    with open(f'{repo}/{fname}', 'w') as f:
-        f.write("hello world")
+    fname = Const.REGULAR_FILE_NAME
+    with hg.chdir():
+        with open(fname, 'w') as f:
+            f.write("hello world")
     hg.do(f'add {fname}')
     hg.commit(f'add {fname}')
+
+    with hg.chdir():
+        os.makedirs(Const.LONG_FOLDER_TREE)
+        fname = Const.LONG_FOLDER_TREE + '/' + Const.LONG_FILE_NAME
+        with open(fname, 'w') as f:
+            f.write("hello world")
+    hg.do(f'add {fname}')
+    hg.commit(f'add long file')
 
     with tarfile.open(f'{repo}.tgz', "w:gz") as tar:
         tar.add(repo, arcname='.')
