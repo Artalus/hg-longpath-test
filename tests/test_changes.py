@@ -48,6 +48,32 @@ def test_rm(unpack_repo: str, hg_cmd: list[str]) -> None:
 
 
 @multiple_hg
+def test_commit_adds(unpack_repo: str, hg_cmd: list[str]) -> None:
+    # TODO: should be skipped if test_add fails, otherwise can report nonsence
+    hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
+    fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME_2)
+    hg.write_file(fname)
+
+    if windows() and hg.is_exe():
+        rc = hg.code(f'add {fname}')
+        assert rc, 'windows cannot add long path'
+
+        before = hg.out('log -T "{node}"')
+        rc = hg.commit_code('another long path')
+        assert rc, 'windows cannot commit addition of long path'
+
+        after = hg.out('log -T "{node}"')
+        assert before == after, 'should still contain same commits'
+    else:
+        hg.do(f'add {fname}')
+        hg.commit('another long path')
+        x = hg.out('log -T x')
+        assert x == 'xxx', 'should contain 3 commits'
+        x = hg.out('status')
+        assert not x, 'should not have changes to files'
+
+
+@multiple_hg
 def test_commit_changes(unpack_repo: str, hg_cmd: list[str]) -> None:
     hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
     fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
