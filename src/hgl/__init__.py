@@ -25,8 +25,13 @@ class Hg:
             c = f'{self.hg_cmd} {cmd}'
             return subprocess.check_output(c, shell=True).decode().strip()
 
+    # TODO: write username once on init
+    def __commit_cmd(self, msg: str) -> str:
+        return f'commit -m "{msg}" --config ui.username="{self.user}"'
     def commit(self, msg: str) -> None:
-        self.do(f'commit -m "{msg}" --config ui.username="{self.user}"')
+        self.do(self.__commit_cmd(msg))
+    def commit_code(self, msg: str) -> int:
+        return self.code(self.__commit_cmd(msg))
 
     @contextlib.contextmanager
     def chdir(self) -> Iterator[None]:
