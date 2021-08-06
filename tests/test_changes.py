@@ -28,18 +28,41 @@ def test_add(unpack_repo: str, hg_cmd: list[str]) -> None:
 
 
 @multiple_hg
+def test_rm(unpack_repo: str, hg_cmd: list[str]) -> None:
+    hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
+    fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
+    def long_file_exists() -> bool:
+        with hg.chdir():
+            return os.path.isfile(fname)
+    # surprisingly, `hg rm` does not fail - yet it does nothing, thinking file already marked
+    assert long_file_exists(), "file exists before rm (of course)"
+    hg.do(f'rm {fname}')
+
+    if windows() and hg.is_exe():
+        assert long_file_exists(), "file should still exist after failed rm"
+    else:
+        x = hg.out(f'status -A {fname}').replace('\\', '/')
+        assert x == f'R {fname}', 'long file should be marked for removal'
+        assert not long_file_exists(), "file removed after rm"
+    hg.write_file(fname, 'world hello')
+    if windows() and hg.is_exe():
+        before = hg.out('log -T "{node}"')
+        rc = hg.commit_code('another long path')
+
+
+@multiple_hg
 def test_commit(unpack_repo: str, hg_cmd: list[str]) -> None:
     hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
     fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
     hg.write_file(fname, 'world hello')
     if windows() and hg.is_exe():
         before = hg.out('log -T "{node}"')
-        rc = hg.commit_code('another long path')
+        rc = hg.commit_code('changed long path')
         assert rc, 'windows cannot commit changes in long paths'
         after = hg.out('log -T "{node}"')
         assert before == after, 'should still contain same commits'
     else:
-        hg.commit('another long path')
+        hg.commit('changed long path')
         x = hg.out('log -T x')
         assert x == 'xxx', 'should contain 3 commits'
 
