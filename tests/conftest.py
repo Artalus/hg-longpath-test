@@ -2,8 +2,6 @@ import tarfile
 
 import pytest
 
-from hgl import Hg
-
 # TODO: make customizable
 REPO_TAR = 'repo.tar'
 

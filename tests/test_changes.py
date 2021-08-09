@@ -176,3 +176,22 @@ def test_move(unpack_repo: str, hg_cmd: list[str]) -> None:
             assert os.path.isfile(dst), "destination file should be created"
         x = hg.out('status').splitlines()
         assert len(x) == 2, 'hg should know about move'
+
+
+@multiple_hg
+def test_update(unpack_repo: str, hg_cmd: list[str]) -> None:
+    hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
+    fname = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
+    def long_file_exists() -> bool:
+        with hg.chdir():
+            return os.path.isfile(fname)
+
+    assert long_file_exists(), "file exists before update (of course)"
+    hg.up('.^')
+    if windows():
+        # apparently, even using script instead of exe does not help in this case
+        assert long_file_exists(), "on windows update does not remove file"
+    else:
+        assert not long_file_exists(), "file no longer exists after update to previous commit"
+    hg.up()
+    assert long_file_exists(), "file exists before update back"

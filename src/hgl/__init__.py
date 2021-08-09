@@ -9,6 +9,15 @@ class Hg:
         self.workdir = workdir
         self.user = user
 
+
+    def up(self, commit: Optional[str]=None) -> 'Hg':
+        cmd = 'up'
+        if commit:
+            cmd += ' '+commit
+        self.do(cmd)
+        return self
+
+
     def code(self, cmd: str) -> int:
         with self.chdir():
             c = f'{self.hg_cmd} {cmd}'
@@ -33,6 +42,7 @@ class Hg:
     def commit_code(self, msg: str) -> int:
         return self.code(self.__commit_cmd(msg))
 
+
     @contextlib.contextmanager
     def chdir(self) -> Iterator[None]:
         if not self.workdir:
@@ -45,6 +55,7 @@ class Hg:
         finally:
             os.chdir(cwd)
 
+
     def write_file(self, path: str, content: str='hello world') -> None:
         with self.chdir():
             dirs, _ = os.path.split(path)
@@ -52,6 +63,7 @@ class Hg:
                 os.makedirs(dirs)
             with open(path, 'w') as f:
                 f.write(content)
+
 
     def is_exe(self) -> bool:
         return ' ' not in self.hg_cmd
