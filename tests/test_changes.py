@@ -1,14 +1,14 @@
 from typing import Callable
 import os
+
 from pytest import mark
 
 from hgl import Hg
 from hgl.init import Const
-
 from hgl.utils import windows, filepath, possible_hg_commands
 
 
-HgTest = Callable[[str, list[str]], None]
+HgTest = Callable[..., None]
 def multiple_hg(func: HgTest) -> HgTest:
     return mark.parametrize("hg_cmd", possible_hg_commands())(func)
 
@@ -98,7 +98,7 @@ def test_commit_removes(unpack_repo: str, hg_cmd: list[str]) -> None:
     if windows() and hg.is_exe():
         assert long_file_exists(), "file should still exist after failed rm"
 
-        hg.commit('remove long path')        
+        hg.commit('remove long path')
         assert long_file_exists(), "file should still exist after failed commit"
     else:
         assert not long_file_exists(), "file removed after rm"

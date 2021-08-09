@@ -3,11 +3,10 @@ from pytest import mark
 
 from hgl import Hg
 from hgl.init import Const
-
 from hgl.utils import windows, filepath, possible_hg_commands
 
 
-HgTest = Callable[[str, list[str]], None]
+HgTest = Callable[..., None]
 def multiple_hg(func: HgTest) -> HgTest:
     return mark.parametrize("hg_cmd", possible_hg_commands())(func)
 
