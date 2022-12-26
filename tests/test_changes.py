@@ -161,16 +161,17 @@ def test_move(unpack_repo: str, hg_cmd: list[str]) -> None:
     hg = Hg(workdir=unpack_repo, hg_cmd=hg_cmd)
     src = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME)
     dst = filepath(Const.LONG_FOLDER_TREE, Const.LONG_FILE_NAME_2)
-    # surprisingly, `hg mv` does not fail - yet reports that file "deleted in working directory" in stderr
-    hg.do(f'mv {src} {dst}')
 
     if windows() and hg.is_exe():
+        rc = hg.code(f'mv {src} {dst}')
+        assert rc, 'windows cannot move long file'
         with hg.chdir():
             assert os.path.isfile(src), "source file should remain"
             assert not os.path.isfile(dst), "destination file should not be"
         x = hg.out('status').splitlines()
         assert len(x) < 2, 'hg should not know about move, but can think file was deleted'
     else:
+        hg.do(f'mv {src} {dst}')
         with hg.chdir():
             assert not os.path.isfile(src), "source file should be removed"
             assert os.path.isfile(dst), "destination file should be created"
