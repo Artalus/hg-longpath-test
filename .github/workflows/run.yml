@@ -16,7 +16,8 @@ jobs:
           python-version: 3.9
       - name: Install dependencies
         run: |
-          pip install -e .
+          # TODO: newer version of mercurial cause unsupported feature somehow
+          pip install -e . mercurial==6.0
       - name: Prepare repo
         run: |
           python -m hgl.init --repo repo
